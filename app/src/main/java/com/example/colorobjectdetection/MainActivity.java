@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -37,7 +38,7 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 
-    private static String TAG = "MainActivity";
+    private static String TAG = "MainActivityLOG";
 
     private Mat mRgba;
     private ColorBlobDetector mDetector;
@@ -50,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private double f = 126.125; // Camera focal length
     private double fh = f * h;
     private double distance, accumDist = 0;
+
+    private double max = 0, min = 1000;
 
     private double bh = 0, height = 0;
 
@@ -69,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     //SPP UUID. Look for it
     static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
+
+    TextView myAwesomeTextView;
     private BaseLoaderCallback mLoaderCallBack = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -104,6 +109,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         openCvCameraView = findViewById(R.id.java_camera_view);
         openCvCameraView.setVisibility(SurfaceView.VISIBLE);
         openCvCameraView.setCvCameraViewListener(this);
+
+        myAwesomeTextView = (TextView)findViewById(R.id.textView2);
     }
 
     @Override
@@ -190,6 +197,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     }
                 }
 
+
+
                 distance = fh / bh;
 
                 moments = Imgproc.moments(bcontour);
@@ -198,16 +207,24 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 cx = (int) (moments.get_m10() / moments.get_m00());
 
                 accumDist = accumDist + distance;
-                bh = 0;
+
                 inc++;
 
                 if (inc >= 18) {
 
                     distance = accumDist / inc;
                     Log.i(TAG, "d: " + distance);
+                    Log.i(TAG, "bh: " + bh);
 
                     accumDist = 0;
                     inc = 0;
+
+                    if (distance < min)
+                        min = distance;
+                    if (distance > max)
+                        max = distance;
+
+                    myAwesomeTextView.setText("" + (int) distance + "\nmin: " + (int) min + "\nmax: " + (int) max);
 
 //                    if (distance >= 21) {
 //
@@ -221,6 +238,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 //
 //                        btSocket.getOutputStream().write("S:".getBytes());
                 }
+                bh = 0;
 
             } /*else if (cx > oldCx) {
 

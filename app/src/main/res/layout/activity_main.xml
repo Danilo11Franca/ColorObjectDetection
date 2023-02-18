@@ -15,4 +15,16 @@
         opencv:camera_id="any"
         tools:ignore="MissingConstraints"/>
 
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="189dp"
+        android:layout_height="153dp"
+        android:background="#000000"
+        android:text=""
+        android:textColor="#FF0000"
+        android:textSize="40dp"
+        tools:ignore="MissingConstraints"
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="16dp" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
