@@ -52,8 +52,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private double fh = f * h;
     private double distance, accumDist = 0;
 
-    private double max = 0, min = 1000;
-
     private double bh = 0, height = 0;
 
     MatOfPoint contour, bcontour;
@@ -65,8 +63,8 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     String address;
     private ProgressDialog progress;
 
-//    BluetoothAdapter myBluetooth = null;
-//    BluetoothSocket btSocket = null;
+    BluetoothAdapter myBluetooth = null;
+    BluetoothSocket btSocket = null;
     private boolean isBtConnected = false;
 
     //SPP UUID. Look for it
@@ -100,9 +98,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         Intent newint = getIntent();
-//        address = newint.getStringExtra(DeviceList.EXTRA_ADDRESS); //receive the address of the bluetooth device
+        address = newint.getStringExtra(DeviceList.EXTRA_ADDRESS); //receive the address of the bluetooth device
 
-//        new ConnectBT().execute(); //Call the class to connect
+        new ConnectBT().execute(); //Call the class to connect
 
         setContentView(R.layout.activity_main);
 
@@ -124,14 +122,14 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     protected void onDestroy() {
         super.onDestroy();
 
-//        if (btSocket != null) //If the btSocket is busy
-//        {
-//            try {
-//                btSocket.close(); //close connection
-//            } catch (IOException e) {
-//                msg("Error");
-//            }
-//        }
+        if (btSocket != null) //If the btSocket is busy
+        {
+            try {
+                btSocket.close(); //close connection
+            } catch (IOException e) {
+                msg("Error");
+            }
+        }
 
         if (openCvCameraView != null)
             openCvCameraView.disableView();
@@ -182,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         //Send command to robot
 
-//        try {
+        try {
 
             if (contours.size() > 0) {
 
@@ -196,8 +194,6 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                         bcontour = contour;
                     }
                 }
-
-
 
                 distance = fh / bh;
 
@@ -219,98 +215,93 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     accumDist = 0;
                     inc = 0;
 
-                    if (distance < min)
-                        min = distance;
-                    if (distance > max)
-                        max = distance;
+                    myAwesomeTextView.setText("" + (int) distance);
 
-                    myAwesomeTextView.setText("" + (int) distance + "\nmin: " + (int) min + "\nmax: " + (int) max);
+                    if (distance >= 21) {
 
-//                    if (distance >= 21) {
-//
-//                        if (cx <= 700) {
-//
-//                            btSocket.getOutputStream().write("F:".getBytes());
-//                        } else
-//
-//                            btSocket.getOutputStream().write("R:".getBytes());
-//                    } else
-//
-//                        btSocket.getOutputStream().write("S:".getBytes());
+                        if (cx <= 700) {
+
+                            btSocket.getOutputStream().write("F:".getBytes());
+                        } else
+
+                            btSocket.getOutputStream().write("R:".getBytes());
+                    } else
+
+                        btSocket.getOutputStream().write("S:".getBytes());
                 }
                 bh = 0;
 
-            } /*else if (cx > oldCx) {
+            } else if (cx > oldCx) {
 
                 btSocket.getOutputStream().write("R:".getBytes());
             } else
 
-                btSocket.getOutputStream().write("L:".getBytes());*/
+                btSocket.getOutputStream().write("L:".getBytes());
 
-//        } catch (IOException e) {
-//            Log.e(TAG, "Error: Command not sended to robot");
-//        }
+        } catch (IOException e) {
+            Log.e(TAG, "Error: Command not sended to robot");
+        }
 
         Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
 
         return mRgba;
     }
 
-//    @SuppressLint("StaticFieldLeak")
-//    private class ConnectBT extends AsyncTask<Void, Void, Void>  // UI thread
-//    {
-//        private boolean ConnectSuccess = true; //if it's here, it's almost connected
-//
-//        @Override
-//        protected void onPreExecute() {
-//            progress = ProgressDialog.show(MainActivity.this, "Connecting...", "Please wait!!!");  //show a progress dialog
-//        }
-//
-//        @Override
-//        protected Void doInBackground(Void... devices) //while the progress dialog is shown, the connection is done in background
-//        {
-//            try {
-//                if (btSocket == null || !isBtConnected) {
-//                    myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
-//                    BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
-//                    if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-//                        // TODO: Consider calling
-//                        //    ActivityCompat#requestPermissions
-//                        // here to request the missing permissions, and then overriding
-//                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//                        //                                          int[] grantResults)
-//                        // to handle the case where the user grants the permission. See the documentation
-//                        // for ActivityCompat#requestPermissions for more details.
-//                        Void TODO = null;
-//                        return TODO;
-//                    }
-//                    btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);//create a RFCOMM (SPP) connection
-//                    BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-//                    btSocket.connect();//start connection
-//                }
-//            }
-//            catch (IOException e)
-//            {
-//                ConnectSuccess = false;//if the try failed, you can check the exception here
-//            }
-//            return null;
-//        }
-//        @Override
-//        protected void onPostExecute(Void result) //after the doInBackground, it checks if everything went fine
-//        {
-//            super.onPostExecute(result);
-//
-//            if (!ConnectSuccess)
-//            {
-//                msg("Connection Failed. Is it a SPP Bluetooth? Try again.");
-////                finish();
-//            }
-//            else
-//            {
-//                msg("Connected.");
-//                isBtConnected = true;
-//            }
-//            progress.dismiss();
-//        }
-//    }
+    @SuppressLint("StaticFieldLeak")
+    private class ConnectBT extends AsyncTask<Void, Void, Void>  // UI thread
+    {
+        private boolean ConnectSuccess = true; //if it's here, it's almost connected
+
+        @Override
+        protected void onPreExecute() {
+            progress = ProgressDialog.show(MainActivity.this, "Connecting...", "Please wait!!!");  //show a progress dialog
+        }
+
+        @Override
+        protected Void doInBackground(Void... devices) //while the progress dialog is shown, the connection is done in background
+        {
+            try {
+                if (btSocket == null || !isBtConnected) {
+                    myBluetooth = BluetoothAdapter.getDefaultAdapter();//get the mobile bluetooth device
+                    BluetoothDevice dispositivo = myBluetooth.getRemoteDevice(address);//connects to the device's address and checks if it's available
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        Void TODO = null;
+                        return TODO;
+                    }
+                    btSocket = dispositivo.createInsecureRfcommSocketToServiceRecord(myUUID);//create a RFCOMM (SPP) connection
+                    BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+                    btSocket.connect();//start connection
+                }
+            }
+            catch (IOException e)
+            {
+                ConnectSuccess = false;//if the try failed, you can check the exception here
+            }
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void result) //after the doInBackground, it checks if everything went fine
+        {
+            super.onPostExecute(result);
+
+            if (!ConnectSuccess)
+            {
+                msg("Connection Failed. Is it a SPP Bluetooth? Try again.");
+//                finish();
+            }
+            else
+            {
+                msg("Connected.");
+                isBtConnected = true;
+            }
+            progress.dismiss();
+        }
+    }
 }
