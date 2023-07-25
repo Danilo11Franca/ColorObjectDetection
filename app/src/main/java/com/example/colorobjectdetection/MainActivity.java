@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         openCvCameraView.setVisibility(SurfaceView.VISIBLE);
         openCvCameraView.setCvCameraViewListener(this);
 
-        myAwesomeTextView = (TextView)findViewById(R.id.textView2);
+//        myAwesomeTextView = (TextView)findViewById(R.id.textView2);
     }
 
     @Override
