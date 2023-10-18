@@ -3,6 +3,7 @@ package com.example.colorobjectdetection;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import android.bluetooth.BluetoothManager;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
@@ -28,8 +29,10 @@ public class DeviceList extends AppCompatActivity {
     ListView devicelist;
     //Bluetooth
     private BluetoothAdapter myBluetooth = null;
+    private BluetoothManager bluetoothManager = null;
     private Set<BluetoothDevice> pairedDevices;
     public static String EXTRA_ADDRESS = "device_address";
+    int REQUEST_ENABLE_BT = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +43,10 @@ public class DeviceList extends AppCompatActivity {
         btnPaired = (Button) findViewById(R.id.button);
         devicelist = (ListView) findViewById(R.id.listView);
 
+        bluetoothManager = getSystemService(BluetoothManager.class);
+
         //if the device has bluetooth
-        myBluetooth = BluetoothAdapter.getDefaultAdapter();
+        myBluetooth = bluetoothManager.getAdapter();
 
         if (myBluetooth == null) {
             //Show a mensag. that the device has no bluetooth adapter
@@ -52,7 +57,8 @@ public class DeviceList extends AppCompatActivity {
         } else if (!myBluetooth.isEnabled()) {
             //Ask to the user turn the bluetooth on
             Intent turnBTon = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT)
+                    != PackageManager.PERMISSION_GRANTED) {
                 // TODO: Consider calling
                 //    ActivityCompat#requestPermissions
                 // here to request the missing permissions, and then overriding
@@ -62,7 +68,7 @@ public class DeviceList extends AppCompatActivity {
                 // for ActivityCompat#requestPermissions for more details.
                 return;
             }
-            startActivityForResult(turnBTon, 1);
+            startActivityForResult(turnBTon, REQUEST_ENABLE_BT);
         }
 
         btnPaired.setOnClickListener(new View.OnClickListener() {

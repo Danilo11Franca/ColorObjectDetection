@@ -100,7 +100,9 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Intent newint = getIntent();
         address = newint.getStringExtra(DeviceList.EXTRA_ADDRESS); //receive the address of the bluetooth device
 
-        new ConnectBT().execute(); //Call the class to connect
+        assert address != null;
+        Log.i(TAG, address);
+//        new ConnectBT().execute(); //Call the class to connect
 
         setContentView(R.layout.activity_main);
 
