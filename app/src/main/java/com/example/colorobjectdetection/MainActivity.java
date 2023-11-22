@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
 
         assert address != null;
         Log.i(TAG, address);
-//        new ConnectBT().execute(); //Call the class to connect
+        new ConnectBT().execute(); //Call the class to connect
 
         setContentView(R.layout.activity_main);
 
@@ -217,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                     accumDist = 0;
                     inc = 0;
 
-                    myAwesomeTextView.setText("" + (int) distance);
+//                    myAwesomeTextView.setText("" + (int) distance);
 
                     if (distance >= 21) {
 
