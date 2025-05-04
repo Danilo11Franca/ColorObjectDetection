@@ -32,6 +32,8 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -51,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
     private double f = 126.125; // Camera focal length
     private double fh = f * h;
     private double distance, accumDist = 0;
-
+    private ArrayList<Double> distanceList = new ArrayList<>();
     private double bh = 0, height = 0;
 
     MatOfPoint contour, bcontour;
@@ -110,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         openCvCameraView.setVisibility(SurfaceView.VISIBLE);
         openCvCameraView.setCvCameraViewListener(this);
 
-//        myAwesomeTextView = (TextView)findViewById(R.id.textView2);
+        myAwesomeTextView = (TextView)findViewById(R.id.textView2);
     }
 
     @Override
@@ -204,20 +206,26 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
                 oldCx = cx;
                 cx = (int) (moments.get_m10() / moments.get_m00());
 
+                distanceList.add(distance);
+
                 accumDist = accumDist + distance;
 
                 inc++;
 
-                if (inc >= 18) {
+                if (inc >= 30) {
 
                     distance = accumDist / inc;
                     Log.i(TAG, "d: " + distance);
                     Log.i(TAG, "bh: " + bh);
 
+//                    double mean = getMean();
+                    double mean = getMeanIQR();
+
+                    distanceList.clear();
                     accumDist = 0;
                     inc = 0;
 
-//                    myAwesomeTextView.setText("" + (int) distance);
+                    myAwesomeTextView.setText("" + (int) mean);
 
                     if (distance >= 21) {
 
@@ -247,6 +255,156 @@ public class MainActivity extends AppCompatActivity implements CameraBridgeViewB
         Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
 
         return mRgba;
+    }
+
+    private double getMean() {
+        double varianceSum = 0;
+
+        for (int i = 0; i < inc; i++) {
+            varianceSum += Math.pow(distanceList.get(i) - distance, 2);
+        }
+
+        double stdDev = Math.sqrt(varianceSum/inc);
+
+        double min = (distance - stdDev);
+        double max = (distance + stdDev);
+
+        double mean = 0;
+        int size = 0;
+
+        for (int i = 0; i < inc; i++) {
+            double d = distanceList.get(i);
+
+            if (d >= min && d <= max) {
+                mean += d;
+                size++;
+            }
+        }
+
+        if (size > 0)
+            mean = mean/size;
+        else
+            mean = distance;
+        return mean;
+    }
+
+    /**
+     * Calcula a média dos valores de distância eliminando outliers pelo método IQR.
+     */
+    private double getMeanIQR() {
+        int n = distanceList.size();
+        if (n == 0) {
+            return distance;  // Se não houver dados, retorna a última distância calculada
+        }
+
+        Collections.sort(distanceList);
+
+        // Obtém Q1 e Q3
+        double q1 = getQuantile(distanceList, 0.25);
+        double q3 = getQuantile(distanceList, 0.75);
+
+        double iqr = q3 - q1;
+        double lowerBound = q1 - 1.5 * iqr;
+        double upperBound = q3 + 1.5 * iqr;
+
+        double sum = 0;
+        int count = 0;
+        for (double d : distanceList) {
+            if (d >= lowerBound && d <= upperBound) {
+                sum += d;
+                count++;
+            }
+        }
+
+        if (count > 0) {
+            return sum / count;
+        } else {
+            return distance;
+        }
+    }
+
+    /**
+     * Retorna o quantil p (0 <= p <= 1) de uma lista ordenada de valores, usando interpolação linear.
+     */
+    private double getQuantile(ArrayList<Double> sortedList, double p) {
+        int n = sortedList.size();
+        if (n == 0) {
+            return 0;
+        }
+        double r = p * (n - 1);
+        int intPart = (int) Math.floor(r);
+        double frac = r - intPart;
+
+        if (intPart + 1 < n) {
+            return sortedList.get(intPart) + frac * (sortedList.get(intPart + 1) - sortedList.get(intPart));
+        } else {
+            return sortedList.get(intPart);
+        }
+    }
+
+    /**
+     * Retorna o k-ésimo menor elemento da lista (índices de 0 a n-1), modificando a lista.
+     */
+    private double quickSelect(ArrayList<Double> list, int left, int right, int k) {
+        if (left == right) {  // Caso base: somente um elemento
+            return list.get(left);
+        }
+
+        // Escolhe um pivô e particiona a lista
+        int pivotIndex = partition(list, left, right);
+
+        if (k == pivotIndex) {
+            return list.get(k);
+        } else if (k < pivotIndex) {
+            return quickSelect(list, left, pivotIndex - 1, k);
+        } else {
+            return quickSelect(list, pivotIndex + 1, right, k);
+        }
+    }
+
+    /**
+     * Retorna o k-ésimo menor elemento da lista (índices de 0 a n-1) de forma iterativa,
+     * modificando a lista original.
+     */
+    private double quickSelectIterative(ArrayList<Double> list, int left, int right, int k) {
+        while (left <= right) {
+            int pivotIndex = partition(list, left, right);
+            if (pivotIndex == k) {
+                return list.get(k);
+            } else if (pivotIndex < k) {
+                left = pivotIndex + 1;
+            } else {
+                right = pivotIndex - 1;
+            }
+        }
+        // Caso o loop termine, retorna o elemento na posição 'left'
+        return list.get(left);
+    }
+
+    /**
+     * Particiona a lista entre os índices left e right usando o último elemento como pivô.
+     * Retorna o índice final do pivô.
+     */
+    private int partition(ArrayList<Double> list, int left, int right) {
+        double pivot = list.get(right);
+        int i = left;
+        for (int j = left; j < right; j++) {
+            if (list.get(j) <= pivot) {
+                swap(list, i, j);
+                i++;
+            }
+        }
+        swap(list, i, right);
+        return i;
+    }
+
+    /**
+     * Troca os elementos nas posições i e j da lista.
+     */
+    private void swap(ArrayList<Double> list, int i, int j) {
+        double temp = list.get(i);
+        list.set(i, list.get(j));
+        list.set(j, temp);
     }
 
     @SuppressLint("StaticFieldLeak")

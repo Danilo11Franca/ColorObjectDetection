@@ -17,5 +17,6 @@ android {
     namespace 'org.opencv'
     buildFeatures {
         aidl true
+        buildConfig true
     }
 }
